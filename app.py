@@ -35,8 +35,33 @@ app = Flask(__name__)
 
 def is_valid_url(url):
     try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc])
+        # Clean up URL first
+        url = url.strip()
+        # Remove any accidental URL prefixes
+        if url.startswith('examphttps://'):
+            url = url.replace('examphttps://', 'https://')
+        # Remove any trailing "le.com" that might be mistakenly added
+        if url.endswith('/le.com'):
+            url = url[:-7]
+            
+        # Ensure URL starts with http:// or https://
+        if not url.startswith(('http://', 'https://')):
+            return False
+            
+        # Additional security checks
+        parsed = urlparse(url)
+        # Check for basic URL structure
+        if not all([parsed.scheme, parsed.netloc]):
+            return False
+        # Ensure scheme is http or https
+        if parsed.scheme not in ['http', 'https']:
+            return False
+        # Check for common injection patterns
+        dangerous_patterns = ['javascript:', 'data:', 'vbscript:', '<script', '-->']
+        if any(pattern in url.lower() for pattern in dangerous_patterns):
+            return False
+            
+        return True
     except:
         return False
 
@@ -300,6 +325,13 @@ def api_analyze():
         logger.error("URL missing in request")
         return jsonify({'error': 'URL is required'}), 400
         
+    # Clean up URL before validation
+    url = url.strip()
+    if url.startswith('examphttps://'):
+        url = url.replace('examphttps://', 'https://')
+    if url.endswith('/le.com'):
+        url = url[:-7]
+        
     if not is_valid_url(url):
         logger.error(f"Invalid URL format: {url}")
         return jsonify({'error': 'Invalid URL format'}), 400
@@ -321,11 +353,25 @@ HOME_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Image Analyzer</title>
+    <title>Google Discover Checker</title>
     <meta charset="utf-8">
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; }
         .container { margin-top: 30px; }
+        .intro { 
+            background-color: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 5px; 
+            margin-bottom: 30px;
+            border-left: 4px solid #4CAF50;
+        }
+        .analyzed-url {
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0;
+            word-break: break-all;
+        }
         .form-group { margin-bottom: 20px; }
         input[type="text"] { width: 100%; padding: 8px; margin-top: 5px; }
         button { background: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer; }
@@ -443,11 +489,23 @@ HOME_TEMPLATE = '''
 </head>
 <body>
     <div class="container">
-        <h1>Image Analyzer</h1>
+        <h1>Google Discover Checker</h1>
+        
+        <div class="intro">
+            <h2>What is this tool?</h2>
+            <p>This tool helps you verify if your web pages meet Google Discover's image requirements. It checks for:</p>
+            <ul>
+                <li>Presence of high-quality images (minimum width of 1200 pixels)</li>
+                <li>Proper meta robots tag configuration (max-image-preview:large)</li>
+                <li>Overall compatibility with Google Discover image guidelines</li>
+            </ul>
+            <p>Simply enter your URL below and get a detailed analysis of your page's images and meta tags.</p>
+        </div>
+
         <form id="analysis-form" action="/analyze" method="post" onsubmit="startAnalysis(); return false;">
             <div class="form-group">
                 <label for="url">URL to analyze:</label>
-                <input type="text" id="url" name="url" placeholder="https://example.com" value="https://example.com" required>
+                <input type="text" id="url" name="url" placeholder="https://example.com" required pattern="^https?://.*" title="Please enter a valid URL starting with http:// or https://">
                 <button type="submit" id="analyze-button">Analyze</button>
             </div>
         </form>
@@ -465,6 +523,9 @@ HOME_TEMPLATE = '''
         
         {% if results %}
         <div class="results">
+            <div class="analyzed-url">
+                <strong>Analyzed URL:</strong> {{ results.url|e }}
+            </div>
             <h2>Analysis Results</h2>
             
             {% if not results.analysis_info.dynamic_analysis_success %}
@@ -521,7 +582,7 @@ HOME_TEMPLATE = '''
         {% endif %}
         
         <footer>
-            <p>© 2025 Image Analyzer for Google Discover</p>
+            <p>© 2024 Google Discover Checker - A tool to verify Google Discover image requirements</p>
         </footer>
     </div>
 </body>
@@ -539,6 +600,13 @@ def analyze_form():
     
     if not url:
         return render_template_string(HOME_TEMPLATE, error="URL missing in request")
+    
+    # Clean up URL before validation
+    url = url.strip()
+    if url.startswith('examphttps://'):
+        url = url.replace('examphttps://', 'https://')
+    if url.endswith('/le.com'):
+        url = url[:-7]
         
     if not is_valid_url(url):
         return render_template_string(HOME_TEMPLATE, error=f"Invalid URL format: {url}")
