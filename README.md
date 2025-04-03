@@ -1,28 +1,28 @@
-# Analyseur d'Images pour Google Discover
+# Image Analyzer for Google Discover
 
-Cette application web permet d'analyser les images d'une page web pour vérifier leur compatibilité avec Google Discover.
+This web application allows you to analyze images on a web page to check their compatibility with Google Discover.
 
-## Fonctionnalités
+## Features
 
-- Détection du tag meta robots avec `max-image-preview:large`
-- Analyse des images statiques et dynamiques
-- Identification des 3 plus grandes images
-- Vérification de la compatibilité avec Google Discover (images d'au moins 1200px de large)
-- API REST pour intégration avec d'autres applications
-- Indicateur de progression visuel pendant l'analyse
-- Journalisation complète des opérations dans un fichier de logs
-- Mécanisme de tentatives multiples pour l'analyse dynamique
-- Interface utilisateur moderne avec affichage en grille des images détectées
+- Detection of meta robots tag with `max-image-preview:large`
+- Analysis of static and dynamic images
+- Identification of the 3 largest images
+- Verification of compatibility with Google Discover (images at least 1200px wide)
+- REST API for integration with other applications
+- Visual progress indicator during analysis
+- Complete logging of operations in a log file
+- Multiple retry mechanism for dynamic analysis
+- Modern user interface with grid display of detected images
 
-## Captures d'écran
+## Screenshots
 
-### Page d'accueil
-![Page d'accueil](screenshot_home.jpg)
+### Home Page
+![Home Page](screenshot_home_en.jpg)
 
-### Page de résultats
-![Page de résultats](screenshot_results.jpg)
+### Results Page
+![Results Page](screenshot_results_en.jpg)
 
-## Technologies utilisées
+## Technologies Used
 
 - Flask
 - BeautifulSoup
@@ -32,76 +32,76 @@ Cette application web permet d'analyser les images d'une page web pour vérifier
 
 ## Installation
 
-### Avec Docker
+### With Docker
 
-1. Cloner le dépôt
+1. Clone the repository
 ```bash
-git clone [URL_DU_DEPOT]
-cd [NOM_DU_DOSSIER]
+git clone [REPOSITORY_URL]
+cd [FOLDER_NAME]
 ```
 
-2. Construire l'image Docker
+2. Build the Docker image
 ```bash
 docker build -t image-analysis-api .
 ```
 
-3. Exécuter le conteneur
+3. Run the container
 ```bash
 docker run -p 5001:5001 image-analysis-api
 ```
 
-4. Accéder à l'application
+4. Access the application
 ```
 http://localhost:5001
 ```
 
-### Sans Docker
+### Without Docker
 
-1. Cloner le dépôt
+1. Clone the repository
 ```bash
-git clone [URL_DU_DEPOT]
-cd [NOM_DU_DOSSIER]
+git clone [REPOSITORY_URL]
+cd [FOLDER_NAME]
 ```
 
-2. Installer les dépendances
+2. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Installer Playwright
+3. Install Playwright
 ```bash
 playwright install --with-deps chromium
 ```
 
-4. Exécuter l'application
+4. Run the application
 ```bash
 python app.py
 ```
 
-5. Accéder à l'application
+5. Access the application
 ```
 http://localhost:5001
 ```
 
-## Utilisation
+## Usage
 
-1. Ouvrez l'application dans votre navigateur
-2. Entrez l'URL de la page web à analyser
-3. Cliquez sur "Analyser"
-4. Consultez les résultats :
-   - Statut du tag meta robots
-   - Compatibilité avec Google Discover
-   - Liste des 3 plus grandes images avec dimensions et aperçus
+1. Open the application in your browser
+2. Enter the URL of the web page to analyze
+3. Click on "Analyze"
+4. Check the results:
+   - Status of the meta robots tag
+   - Compatibility with Google Discover
+   - List of the 3 largest images with dimensions and previews
 
-## API REST
+## REST API
 
-L'application propose une API REST pour l'intégration avec d'autres services.
+The application provides a REST API for integration with other services.
 
 ### Endpoint
 
 `POST /api/analyze`
 
-### Exemple de requête
+### Request Example
 
 ```bash
 curl -X POST \
@@ -110,7 +110,7 @@ curl -X POST \
   -d '{"url": "https://www.example.com"}'
 ```
 
-### Exemple de réponse
+### Response Example
 
 ```json
 {

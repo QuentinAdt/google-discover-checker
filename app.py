@@ -12,7 +12,7 @@ import json
 from logging.handlers import RotatingFileHandler
 import time
 
-# Configuration du logging
+# Logging configuration
 log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, 'app.log')
@@ -21,12 +21,12 @@ logging.basicConfig(level=logging.INFO,
                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Ajouter un handler pour écrire dans un fichier
+# Add handler to write to a file
 file_handler = RotatingFileHandler(log_file, maxBytes=10485760, backupCount=5)
 file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(file_handler)
 
-# Ajouter un handler pour la console
+# Add handler for console
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logger.addHandler(console_handler)
@@ -122,7 +122,7 @@ def analyze_dynamic_images(url, max_retries=3):
     
     while retries < max_retries:
         try:
-            logger.info(f"Tentative {retries + 1}/{max_retries} d'analyse dynamique")
+            logger.info(f"Dynamic analysis attempt {retries + 1}/{max_retries}")
             with sync_playwright() as p:
                 browser = p.chromium.launch(
                     args=['--no-sandbox', '--disable-setuid-sandbox']
@@ -187,8 +187,8 @@ def analyze_dynamic_images(url, max_retries=3):
                                 'area': img['width'] * img['height']
                             }
                     
-                    # Si nous arrivons ici, l'analyse a réussi, sortir de la boucle
-                    logger.info(f"Analyse dynamique réussie à la tentative {retries + 1}")
+                    # If we get here, the analysis was successful, exit the loop
+                    logger.info(f"Dynamic analysis successful on attempt {retries + 1}")
                     return results, robots_meta_found
                     
                 except PlaywrightTimeout:
@@ -205,10 +205,10 @@ def analyze_dynamic_images(url, max_retries=3):
         
         retries += 1
         if retries < max_retries:
-            logger.info(f"Nouvelle tentative ({retries + 1}/{max_retries}) dans 2 secondes...")
+            logger.info(f"New attempt ({retries + 1}/{max_retries}) in 2 seconds...")
             time.sleep(2)
     
-    logger.warning(f"Échec de l'analyse dynamique après {max_retries} tentatives. Dernière erreur: {last_error}")
+    logger.warning(f"Dynamic analysis failed after {max_retries} attempts. Last error: {last_error}")
     return results, robots_meta_found
 
 def merge_results(static_results, dynamic_results):
@@ -223,7 +223,7 @@ def merge_results(static_results, dynamic_results):
         width = dynamic_data.get('width', static_data.get('width', 0))
         height = dynamic_data.get('height', static_data.get('height', 0))
         
-        if width > 0 and height > 0:  # Ignorer les images invalides
+        if width > 0 and height > 0:  # Ignore invalid images
             merged[url] = {
                 'url': url,
                 'width': width,
@@ -233,24 +233,24 @@ def merge_results(static_results, dynamic_results):
                 'area': width * height
             }
     
-    # Trier par taille et prendre les 3 plus grandes images
+    # Sort by size and take the 3 largest images
     sorted_images = sorted(merged.values(), key=lambda x: x['area'], reverse=True)[:3]
     return sorted_images
 
 def analyze_url(url):
     try:
         # Analyze images
-        logger.info("Début de l'analyse des images statiques")
+        logger.info("Starting static image analysis")
         static_results, static_robots = analyze_static_images(url)
-        logger.info(f"Résultats statiques : {len(static_results)} images trouvées, robots meta trouvé : {static_robots}")
+        logger.info(f"Static results: {len(static_results)} images found, robots meta found: {static_robots}")
         
-        logger.info("Début de l'analyse des images dynamiques")
+        logger.info("Starting dynamic image analysis")
         dynamic_results, dynamic_robots = analyze_dynamic_images(url)
-        logger.info(f"Résultats dynamiques : {len(dynamic_results)} images trouvées, robots meta trouvé : {dynamic_robots}")
+        logger.info(f"Dynamic results: {len(dynamic_results)} images found, robots meta found: {dynamic_robots}")
         
         # Merge and sort results
         largest_images = merge_results(static_results, dynamic_results)
-        logger.info(f"Fusion des résultats : {len(largest_images)} images retenues")
+        logger.info(f"Results merged: {len(largest_images)} images retained")
         
         # Check for high resolution images
         has_high_res = any(img['width'] >= 1200 for img in largest_images)
@@ -270,29 +270,29 @@ def analyze_url(url):
             'largest_images': largest_images
         }, None
     except Exception as e:
-        logger.error(f"Erreur lors de l'analyse : {str(e)}")
-        logger.exception("Stack trace complète :")
+        logger.error(f"Error during analysis: {str(e)}")
+        logger.exception("Full stack trace:")
         return None, str(e)
 
 @app.route('/api/analyze', methods=['POST'])
 def api_analyze():
-    logger.info("Nouvelle requête d'analyse reçue via API")
+    logger.info("New analysis request received via API")
     
     if not request.is_json:
-        logger.error("La requête n'est pas au format JSON")
+        logger.error("Request is not in JSON format")
         return jsonify({'error': 'Content-Type must be application/json'}), 400
         
     data = request.get_json()
     url = data.get('url')
     
-    logger.info(f"URL à analyser : {url}")
+    logger.info(f"URL to analyze: {url}")
     
     if not url:
-        logger.error("URL manquante dans la requête")
+        logger.error("URL missing in request")
         return jsonify({'error': 'URL is required'}), 400
         
     if not is_valid_url(url):
-        logger.error(f"Format d'URL invalide : {url}")
+        logger.error(f"Invalid URL format: {url}")
         return jsonify({'error': 'Invalid URL format'}), 400
     
     results, error = analyze_url(url)
@@ -304,15 +304,15 @@ def api_analyze():
             'type': 'Exception'
         }), 500
     
-    logger.info("Analyse terminée avec succès")
+    logger.info("Analysis completed successfully")
     return jsonify(results)
 
-# Template HTML pour la page d'accueil simplifiée
+# HTML template for the simplified home page
 HOME_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Analyse d'Images</title>
+    <title>Image Analyzer</title>
     <meta charset="utf-8">
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; }
@@ -390,55 +390,55 @@ HOME_TEMPLATE = '''
     </style>
     <script>
         function startAnalysis() {
-            // Afficher l'indicateur de progression
+            // Show progress indicator
             document.getElementById('progress-container').style.display = 'block';
             document.getElementById('analyze-button').disabled = true;
-            document.getElementById('progress-message').innerText = 'Analyse des images statiques...';
+            document.getElementById('progress-message').innerText = 'Analyzing static images...';
             
-            // Simuler les étapes de progression
+            // Simulate progress steps
             setTimeout(() => {
                 document.getElementById('progress-bar').style.width = '20%';
             }, 500);
             
             setTimeout(() => {
                 document.getElementById('progress-bar').style.width = '40%';
-                document.getElementById('progress-message').innerText = 'Vérification des meta tags...';
+                document.getElementById('progress-message').innerText = 'Checking meta tags...';
             }, 2000);
             
             setTimeout(() => {
                 document.getElementById('progress-bar').style.width = '60%';
-                document.getElementById('progress-message').innerText = 'Analyse des images dynamiques...';
+                document.getElementById('progress-message').innerText = 'Analyzing dynamic images...';
             }, 3500);
             
             setTimeout(() => {
                 document.getElementById('progress-bar').style.width = '80%';
-                document.getElementById('progress-message').innerText = 'Évaluation de la compatibilité Google Discover...';
+                document.getElementById('progress-message').innerText = 'Evaluating Google Discover compatibility...';
             }, 5000);
             
             setTimeout(() => {
                 document.getElementById('progress-bar').style.width = '100%';
-                document.getElementById('progress-message').innerText = 'Analyse terminée, traitement des résultats...';
+                document.getElementById('progress-message').innerText = 'Analysis complete, processing results...';
             }, 6000);
             
-            // Soumettre le formulaire
+            // Submit the form
             document.getElementById('analysis-form').submit();
         }
     </script>
 </head>
 <body>
     <div class="container">
-        <h1>Analyse d'Images</h1>
+        <h1>Image Analyzer</h1>
         <form id="analysis-form" action="/analyze" method="post" onsubmit="startAnalysis(); return false;">
             <div class="form-group">
-                <label for="url">URL à analyser :</label>
-                <input type="text" id="url" name="url" placeholder="https://example.com" value="https://www.zonebourse.com/actualite-bourse/Quels-secteurs-privilegier-en-periode-de-crise-boursiere--49519033/" required>
-                <button type="submit" id="analyze-button">Analyser</button>
+                <label for="url">URL to analyze:</label>
+                <input type="text" id="url" name="url" placeholder="https://example.com" value="https://example.com" required>
+                <button type="submit" id="analyze-button">Analyze</button>
             </div>
         </form>
         
         <div id="progress-container" class="progress-container" style="display: none;">
             <div id="progress-bar" class="progress-bar"></div>
-            <div id="progress-message" class="progress-message">Préparation de l'analyse...</div>
+            <div id="progress-message" class="progress-message">Preparing analysis...</div>
         </div>
         
         {% if error %}
@@ -449,38 +449,38 @@ HOME_TEMPLATE = '''
         
         {% if results %}
         <div class="results">
-            <h2>Résultats de l'analyse</h2>
+            <h2>Analysis Results</h2>
             
             <div class="result-section">
                 <h3>Meta Robots Tag</h3>
                 {% if results.robots_meta.max_image_preview_large_found %}
-                <p class="success">✓ Tag meta robots avec max-image-preview:large trouvé</p>
+                <p class="success">✓ Meta robots tag with max-image-preview:large found</p>
                 {% else %}
-                <p class="warning">⚠ Tag meta robots avec max-image-preview:large non trouvé</p>
-                <p>Google recommande d'ajouter <code>&lt;meta name="robots" content="max-image-preview:large"&gt;</code> dans la section head de votre page.</p>
+                <p class="warning">⚠ Meta robots tag with max-image-preview:large not found</p>
+                <p>Google recommends adding <code>&lt;meta name="robots" content="max-image-preview:large"&gt;</code> in the head section of your page.</p>
                 {% endif %}
             </div>
             
             <div class="result-section">
-                <h3>Compatibilité avec Google Discover</h3>
+                <h3>Google Discover Compatibility</h3>
                 {% if results.discover_compatibility.compatible %}
-                <p class="success">✓ Compatible avec Google Discover</p>
+                <p class="success">✓ Compatible with Google Discover</p>
                 {% else %}
-                <p class="warning">⚠ Non compatible avec Google Discover</p>
+                <p class="warning">⚠ Not compatible with Google Discover</p>
                 {% if not results.discover_compatibility.has_large_images %}
-                <p>Aucune image n'atteint la largeur minimale requise ({{ results.discover_compatibility.minimum_width_required }}px)</p>
-                <p>Pour être compatible, assurez-vous d'avoir au moins une image de largeur supérieure ou égale à {{ results.discover_compatibility.minimum_width_required }}px.</p>
+                <p>No image meets the minimum width requirement ({{ results.discover_compatibility.minimum_width_required }}px)</p>
+                <p>To be compatible, make sure you have at least one image with width greater than or equal to {{ results.discover_compatibility.minimum_width_required }}px.</p>
                 {% endif %}
                 {% endif %}
             </div>
             
             <div class="result-section">
-                <h3>Les 3 plus grandes images</h3>
+                <h3>3 Largest Images</h3>
                 <div class="card-grid">
                     {% for img in results.largest_images %}
                     <div class="card">
                         <a href="{{ img.url }}" target="_blank">
-                            <img src="{{ img.url }}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22><rect width=%22200%22 height=%22150%22 fill=%22%23ddd%22/><text x=%22100%22 y=%2275%22 text-anchor=%22middle%22 fill=%22%23666%22>Image non disponible</text></svg>'">
+                            <img src="{{ img.url }}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22><rect width=%22200%22 height=%22150%22 fill=%22%23ddd%22/><text x=%22100%22 y=%2275%22 text-anchor=%22middle%22 fill=%22%23666%22>Image not available</text></svg>'">
                         </a>
                         <div class="card-content">
                             <div class="metadata">
@@ -499,7 +499,7 @@ HOME_TEMPLATE = '''
         {% endif %}
         
         <footer>
-            <p>© 2025 Analyseur d'Images pour Google Discover</p>
+            <p>© 2025 Image Analyzer for Google Discover</p>
         </footer>
     </div>
 </body>
@@ -513,20 +513,20 @@ def home():
 @app.route('/analyze', methods=['POST'])
 def analyze_form():
     url = request.form.get('url', '')
-    logger.info(f"Nouvelle requête d'analyse reçue via formulaire : {url}")
+    logger.info(f"New analysis request received via form: {url}")
     
     if not url:
-        return render_template_string(HOME_TEMPLATE, error="URL manquante dans la requête")
+        return render_template_string(HOME_TEMPLATE, error="URL missing in request")
         
     if not is_valid_url(url):
-        return render_template_string(HOME_TEMPLATE, error=f"Format d'URL invalide : {url}")
+        return render_template_string(HOME_TEMPLATE, error=f"Invalid URL format: {url}")
     
     results, error = analyze_url(url)
     
     if error:
-        return render_template_string(HOME_TEMPLATE, error=f"Erreur lors de l'analyse : {error}")
+        return render_template_string(HOME_TEMPLATE, error=f"Error during analysis: {error}")
     
-    logger.info("Analyse terminée avec succès")
+    logger.info("Analysis completed successfully")
     return render_template_string(HOME_TEMPLATE, results=results)
 
 if __name__ == '__main__':
