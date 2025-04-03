@@ -14,6 +14,14 @@ Cette application web permet d'analyser les images d'une page web pour vérifier
 - Mécanisme de tentatives multiples pour l'analyse dynamique
 - Interface utilisateur moderne avec affichage en grille des images détectées
 
+## Captures d'écran
+
+### Page d'accueil
+![Page d'accueil](screenshot_home.jpg)
+
+### Page de résultats
+![Page de résultats](screenshot_results.jpg)
+
 ## Technologies utilisées
 
 - Flask
