@@ -255,6 +255,9 @@ def analyze_url(url):
         # Check for high resolution images
         has_high_res = any(img['width'] >= 1200 for img in largest_images)
         
+        # Check if dynamic analysis was successful
+        dynamic_analysis_success = len(dynamic_results) > 0
+        
         return {
             'url': url,
             'robots_meta': {
@@ -267,7 +270,13 @@ def analyze_url(url):
                 'minimum_width_required': 1200,
                 'compatible': has_high_res and (static_robots or dynamic_robots)
             },
-            'largest_images': largest_images
+            'largest_images': largest_images,
+            'analysis_info': {
+                'dynamic_analysis_success': dynamic_analysis_success,
+                'static_analysis_success': len(static_results) > 0,
+                'total_static_images': len(static_results),
+                'total_dynamic_images': len(dynamic_results)
+            }
         }, None
     except Exception as e:
         logger.error(f"Error during analysis: {str(e)}")
@@ -387,6 +396,13 @@ HOME_TEMPLATE = '''
             font-size: 12px;
             color: #666;
         }
+        .analysis-info {
+            background-color: #f0f8ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4682b4;
+        }
     </style>
     <script>
         function startAnalysis() {
@@ -450,6 +466,12 @@ HOME_TEMPLATE = '''
         {% if results %}
         <div class="results">
             <h2>Analysis Results</h2>
+            
+            {% if not results.analysis_info.dynamic_analysis_success %}
+            <div class="analysis-info warning">
+                <p><strong>Note:</strong> Dynamic analysis failed or timed out. Results are based on static analysis only ({{ results.analysis_info.total_static_images }} images found).</p>
+            </div>
+            {% endif %}
             
             <div class="result-section">
                 <h3>Meta Robots Tag</h3>
